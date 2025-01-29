@@ -1,6 +1,6 @@
 ## Academic Copy Editor Agent
 
-This is an academic correcting agent that copy edits a working paper and saves the updated document, including a track-changes copy. It runs through every paragraph, correcting grammar and spelling while also incrementally improving the style. It also tries to leave the paragraph structure, content, formatting, and terminology as it is.
+This is an agent that copy edits academic working papers and saves the updated document, including a separate track-changes copy. It runs through every paragraph of a working paper, correcting grammar and spelling while also incrementally improving the style. It also tries to leave the paragraph structure, content, formatting, and terminology intact.
 
 ## How to use?
 

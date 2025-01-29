@@ -64,15 +64,16 @@ doc = Document(input_path)
 processing = False  # Flag to start processing after "Introduction"
 found_abstract = False  # Track if we found the "Abstract" section
 stop_keywords = ["References", "Bibliography"]
+start_keywords = ["Introduction"]  # Flexible introduction headings
 
-# Adjust total paragraph count (ONLY counting paragraphs that will actually be processed)
+# Adjust total paragraph count (ONLY counting paragraphs before "References")
 paragraph_count = 0
 
 for p in doc.paragraphs:
     text = p.text.strip()
 
     # Detect and include the paragraph right after "Abstract"
-    if text.startswith("Abstract"):
+    if re.match(r"^Abstract$", text, re.IGNORECASE):
         found_abstract = True
         continue  # Skip the "Abstract" heading itself
 
@@ -80,12 +81,13 @@ for p in doc.paragraphs:
         paragraph_count += 1
         found_abstract = False  # Reset flag so only ONE paragraph after Abstract is counted
 
-    # Start counting after "Introduction"
-    if text.startswith("Introduction"):
+    # Start counting after "Introduction" (or numbered versions like "1. Introduction")
+    if re.match(r"^\d*\.?\s*Introduction$", text, re.IGNORECASE):
         processing = True
+        continue
 
-    # Stop counting after "References"
-    if text in stop_keywords:
+    # Stop counting after "References" (or numbered versions like "6. References")
+    if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
         break  # Stop counting at "References" or "Bibliography"
 
     if processing and text.count(".") >= 2:
@@ -97,8 +99,8 @@ for i, p in enumerate(doc.paragraphs):
     text = p.text.strip()
 
     # Detect and include the paragraph right after "Abstract"
-    if text.startswith("Abstract"):
-        found_abstract = True  # Flag that we found "Abstract"
+    if re.match(r"^Abstract$", text, re.IGNORECASE):
+        found_abstract = True
         continue  # Skip the "Abstract" heading itself
 
     if found_abstract and text.count(".") >= 2:
@@ -108,12 +110,14 @@ for i, p in enumerate(doc.paragraphs):
         print(f"Processed paragraph {processed_count}/{paragraph_count}")
         found_abstract = False  # Reset flag so only ONE paragraph after Abstract is edited
 
-    # Start normal processing after "Introduction"
-    if text.startswith("Introduction"):
+    # Start normal processing after "Introduction" (or numbered versions like "1. Introduction")
+    if re.match(r"^\d*\.?\s*Introduction$", text, re.IGNORECASE):
         processing = True
         print("Starting edits after 'Introduction'")
+        continue
 
-    if text in stop_keywords:
+    # Stop processing after "References" (or numbered versions like "6. References")
+    if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
         print(f"Stopping edits at '{text}'")
         break  # Stop processing at "References" or "Bibliography"
 

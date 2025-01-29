@@ -66,7 +66,18 @@ found_abstract = False  # Track if we found the "Abstract" section
 stop_keywords = ["References", "Bibliography"]
 start_keywords = ["Introduction"]  # Flexible introduction headings
 
-# Adjust total paragraph count (ONLY counting paragraphs before "References")
+# Function to detect if a line is likely a heading
+def is_heading(text):
+    """ Returns True if the text is likely a heading or subheading. """
+    # Check for numbered headings (e.g., "2.1 Methodology", "3 Results", "4.1 Hypothesis Testing")
+    if re.match(r"^\d+(\.\d+)*\s+\w+", text):
+        return True
+    # Check if the text is short and does not contain full sentences
+    if len(text.split()) < 10 and text.count(".") <= 1:
+        return True
+    return False
+
+# Adjust total paragraph count (ONLY counting actual paragraphs before "References")
 paragraph_count = 0
 
 for p in doc.paragraphs:
@@ -90,7 +101,8 @@ for p in doc.paragraphs:
     if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
         break  # Stop counting at "References" or "Bibliography"
 
-    if processing and text.count(".") >= 2:
+    # Skip headings/subheadings while processing
+    if processing and not is_heading(text) and text.count(".") >= 2:
         paragraph_count += 1
 
 processed_count = 0

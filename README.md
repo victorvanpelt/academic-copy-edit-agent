@@ -4,7 +4,7 @@ This is an academic correcting agent that copy edits a working paper and saves t
 
 ## How to use?
 
-1.  Add your OpenAI API key as an environmental variable (it is called in line 8)
+1.  Add your OpenAI API key as an environmental variable (it is called in line 8 of "correct_paper.py")
 
 2.  Adjust instructions in lines 22-33 and line 56
 

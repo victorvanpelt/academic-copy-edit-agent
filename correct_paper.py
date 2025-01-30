@@ -11,7 +11,7 @@ if not api_key:
 
 openai.api_key = api_key  # Set OpenAI API Key for compatibility
 
-def edit_paragraph_with_chatgpt(text, instruction, model="gpt-4o", debug=False):
+def edit_paragraph_with_chatgpt(text, instruction, model="GPT-4o", debug=False):
     """
     Edit a single paragraph with OpenAI's Chat API for grammar and style correction.
     Ensures that paragraph structure is preserved and formatting is not changed.

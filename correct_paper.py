@@ -93,12 +93,14 @@ for p in doc.paragraphs:
         found_abstract = False  # Reset flag so only ONE paragraph after Abstract is counted
 
     # Start counting after "Introduction" (or numbered versions like "1. Introduction")
-    if re.match(r"^\d*\.?\s*Introduction$", text, re.IGNORECASE):
+    if "Introduction" in text:
+    # if re.match(r"^\d*\.?\s*Introduction$", text, re.IGNORECASE):
         processing = True
         continue
 
     # Stop counting after "References" (or numbered versions like "6. References")
-    if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
+    if "References" in text:
+    #if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
         break  # Stop counting at "References" or "Bibliography"
 
     # Skip headings/subheadings while processing
@@ -123,10 +125,15 @@ for i, p in enumerate(doc.paragraphs):
         found_abstract = False  # Reset flag so only ONE paragraph after Abstract is edited
 
     # Start normal processing after "Introduction" (or numbered versions like "1. Introduction")
-    if re.match(r"^\d*\.?\s*Introduction$", text, re.IGNORECASE):
+    # if re.match(r"^\d*\.?\s*Introduction$", text, re.IGNORECASE):
+    #    processing = True
+    #    print("Starting edits after 'Introduction'")
+    #    continue
+    if "Introduction" in text:
         processing = True
-        print("Starting edits after 'Introduction'")
+        print("✅ Starting edits after 'Introduction'")
         continue
+
 
     # Stop processing after "References" (or numbered versions like "6. References")
     if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
@@ -152,22 +159,43 @@ output_doc_path = os.path.abspath("1_output/trackchanges_paper.docx")
 def compare_documents(original, edited, output):
     """
     Automates Microsoft Word's 'Compare Documents' function while ignoring citation changes.
-    Only rejects changes inside square brackets if they contain a number.
+    Ensures Word properly opens both files before attempting comparison.
     """
     try:
         word = win32.Dispatch("Word.Application")
         word.Visible = False
 
-        original_doc = word.Documents.Open(original)
-        edited_doc = word.Documents.Open(edited)
+        # Open Original Document with Error Handling
+        try:
+            original_doc = word.Documents.Open(original)
+        except Exception as e:
+            print(f"⚠️ Error opening original document: {e}")
+            word.Quit()
+            return
+        
+        # Open Edited Document with Error Handling
+        try:
+            edited_doc = word.Documents.Open(edited)
+        except Exception as e:
+            print(f"⚠️ Error opening edited document: {e}")
+            original_doc.Close(False)
+            word.Quit()
+            return
 
         # Perform document comparison
-        compared_doc = word.CompareDocuments(
-            OriginalDocument=original_doc,
-            RevisedDocument=edited_doc,
-            CompareFormatting=False,
-            IgnoreAllComparisonWarnings=True
-        )
+        try:
+            compared_doc = word.CompareDocuments(
+                OriginalDocument=original_doc,
+                RevisedDocument=edited_doc,
+                CompareFormatting=False,
+                IgnoreAllComparisonWarnings=True
+            )
+        except Exception as e:
+            print(f"⚠️ Word comparison failed: {e}")
+            original_doc.Close(False)
+            edited_doc.Close(False)
+            word.Quit()
+            return
 
         # Reject citation-related changes
         for change in compared_doc.Revisions:
@@ -190,13 +218,10 @@ def compare_documents(original, edited, output):
         edited_doc.Close(False)
 
         word.Quit()  # Fully close Word
-
-        print(f"Comparison completed. Document saved to: {output}")
+        print(f"✅ Comparison completed. Document saved to: {output}")
 
     except Exception as e:
-        print(f"Error comparing documents: {e}")
-
-    finally:
+        print(f"❌ Critical error comparing documents: {e}")
         word.Quit()  # Ensure Word fully exits
 
 compare_documents(original_doc_path, edited_doc_path, output_doc_path)

@@ -114,7 +114,7 @@ for i, p in enumerate(doc.paragraphs):
     text = p.text.strip()
 
     # Detect and include the paragraph right after "Abstract"
-    if "Abstract" in tex
+    if "Abstract" in text:
     #if re.match(r"^Abstract$", text, re.IGNORECASE):
         found_abstract = True
         continue  # Skip the "Abstract" heading itself

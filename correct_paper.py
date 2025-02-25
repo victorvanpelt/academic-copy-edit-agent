@@ -84,8 +84,7 @@ for p in doc.paragraphs:
     text = p.text.strip()
 
     # Detect and include the paragraph right after "Abstract"
-    if "Abstract" in text:
-    #if re.match(r"^Abstract$", text, re.IGNORECASE):
+    if re.match(r"^Abstract$", text, re.IGNORECASE):
         found_abstract = True
         continue  # Skip the "Abstract" heading itself
 
@@ -114,8 +113,7 @@ for i, p in enumerate(doc.paragraphs):
     text = p.text.strip()
 
     # Detect and include the paragraph right after "Abstract"
-    if "Abstract" in text:
-    #if re.match(r"^Abstract$", text, re.IGNORECASE):
+    if re.match(r"^Abstract$", text, re.IGNORECASE):
         found_abstract = True
         continue  # Skip the "Abstract" heading itself
 
@@ -138,8 +136,7 @@ for i, p in enumerate(doc.paragraphs):
 
 
     # Stop processing after "References" (or numbered versions like "6. References")
-    if "References" in text or text in stop_keywords:
-    #if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
+    if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
         print(f"Stopping edits at '{text}'")
         break  # Stop processing at "References" or "Bibliography"
 

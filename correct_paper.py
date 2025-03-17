@@ -186,7 +186,7 @@ for p in doc.paragraphs:
 
     # Stop if we see "References" or "Bibliography"
     if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
-        print(f"Stopping counting at '{text}'")
+        print(f"✅ Stopping counting at '{text}'")
         break
 
     # If processing, skip headings but count paragraphs with 2+ sentences
@@ -217,7 +217,7 @@ for p in doc.paragraphs:
         continue
 
     if re.match(r"^\d*\.?\s*References$", raw_text, re.IGNORECASE) or raw_text in stop_keywords:
-        print(f"Stopping processing at '{raw_text}'")
+        print(f"✅ Stopping processing at '{raw_text}'")
         break
 
     if processing and raw_text.count(".") >= 2 and not is_heading(raw_text):
@@ -226,10 +226,10 @@ for p in doc.paragraphs:
         processed_count += 1
         print(f"Processed paragraph {processed_count}/{paragraph_count}")
 
-print("Editing complete. Saving document...")
+print("✅ Editing complete. Saving document...")
 
 doc.save(edited_doc_path)
-print(f"Document saved to {edited_doc_path}")
+print(f"✅ Document saved to {edited_doc_path}")
 
 ###############################################################################
 # 3) Compare documents in Word
@@ -282,6 +282,8 @@ def compare_documents(original, edited, output):
                 change.Reject()
             elif re.match(r"\[\d+\]", txt):
                 change.Reject()
+
+
 
         compared_doc.SaveAs(output, FileFormat=16)
 

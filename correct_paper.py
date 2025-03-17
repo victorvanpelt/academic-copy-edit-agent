@@ -15,11 +15,16 @@ gpt_model = "gpt-4o"
 # Remove old output files if they exist
 for path in [edited_doc_path, output_doc_path]:
     if os.path.exists(path):
-        os.remove(path)
+        try:
+            os.remove(path)
+        except PermissionError:
+            print(f"❌ Error: The file '{path}' is currently open or locked. Please close it and try again.")
+        except Exception as e:
+            print(f"⚠️ Unexpected error deleting '{path}': {e}")
 
 if not os.path.exists(original_doc_path):
-    print("paper.docx does not exist in the input folder. "
-          "Please ensure this file exists under that name.")
+    print("❌ Error: 'paper.docx' does not exist in the input folder. "
+          "Please ensure this file is named correctly and placed in the '0_input' directory.")
 
 # Load OpenAI API key from environment variable
 api_key = os.getenv("OPENAI_API_KEY")
@@ -283,7 +288,10 @@ def compare_documents(original, edited, output):
             elif re.match(r"\[\d+\]", txt):
                 change.Reject()
 
-
+        # Reject footnote-related changes
+        for footnote in compared_doc.Footnotes:
+            for change in footnote.Range.Revisions:
+                change.Reject()  # Reject any modifications in footnotes
 
         compared_doc.SaveAs(output, FileFormat=16)
 

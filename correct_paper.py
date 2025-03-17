@@ -92,31 +92,19 @@ def edit_sentence_with_chatgpt(sentence, model=gpt_model):
         return sentence
 
     system_prompt = (
-        "You are a professional academic editor. Your job is to improve grammar, spelling, style, and professional language use "
-        "while preserving original paragraph breaks and formatting.\n"
-        "\n"
-        "Readability & Clarity: Improve sentence structure, enhance logical flow, and eliminate unnecessary complexity "
-        "while preserving academic rigor.\n"
-        "Active Voice: Convert passive voice to active voice wherever possible, unless passive is necessary.\n"
-        "Punctuation & Grammar: Correct punctuation, grammar, and syntax errors to ensure fluency.\n"
-        "Consistency in Terminology & Style: Ensure uniform usage of terms and maintain consistent American English spelling.\n"
-        "Precision & Objectivity: Remove vague language, strengthen claims with precise wording, and avoid subjective or exaggerated statements.\n"
-        "Avoid Wordiness: Eliminate redundant words while preserving meaning.\n"
-        "Logical Flow & Transitions: Improve coherence between sentences.\n"
-        "\n"
-        "Additionally, if a sentence contains any footnote marker at the end, or if it contains parentheses/brackets (likely references), "
-        "do NOT edit that sentence. Leave such sentences entirely intact.\n"
-        "\n"
-        "Follow these rules meticulously:\n\n"
-        "1) Do NOT split, merge, reorder, duplicate, or remove paragraphs. You must keep the exact paragraph structure.\n"
-        "2) Do NOT alter or remove domain-specific terminology, technical terms, capitalized terms, or proper nouns.\n"
-        "3) Do NOT delete or alter citations, equations, footnotes, bracketed references, or any text in parentheses or brackets. "
-        "If a sentence contains them, skip editing that sentence.\n"
-        "4) If a paragraph contains sentences with references or footnotes, skip those sentences entirely, unchanged.\n"
-        "5) Preserve all numbers, author names, and citation formatting exactly as they are.\n"
-        "6) Return only the corrected text, with no extra explanations, no new paragraph breaks, and no additional comments.\n"
-        "7) Do not contract words (e.g., use 'do not' instead of 'don’t').\n"
-        "8) Focus purely on grammar, style, and clarity—do not add or remove any content.\n"
+        "You are a professional academic editor. Improve grammar, spelling, and style while preserving paragraph breaks. "
+        "Follow these rules strictly:\n"
+        "1) Readability & Clarity: refine sentence structure, enhance logical flow, and remove unnecessary complexity (maintain academic rigor).\n"
+        "2) Active Voice: convert passive to active whenever possible, unless truly needed.\n"
+        "3) Punctuation & Grammar: correct errors for fluency.\n"
+        "4) Consistency & Style: keep terms uniform, use consistent American English spelling.\n"
+        "5) Precision & Objectivity: remove vague language, strengthen claims, avoid subjectivity.\n"
+        "6) Avoid Wordiness: cut redundant words while preserving meaning.\n"
+        "7) Logical Flow & Transitions: ensure coherent transitions between sentences.\n"
+        "8) If a sentence has footnotes at the end or parentheses/brackets (references), skip editing that sentence. Leave it intact.\n"
+        "9) Do NOT merge, split, or reorder paragraphs. Preserve domain terminology, citations, numbers, and equations.\n"
+        "10) Use typographic (curly) apostrophes (’ instead of ').\n"
+        "11) Return only the corrected text, with no explanations or new paragraph breaks.\n"
     )
 
     try:
@@ -167,10 +155,10 @@ def edit_paragraph_sentencewise(paragraph_text, model=gpt_model):
 ###############################################################################
 doc = Document(original_doc_path)
 
-processing     = False  # Flag to start processing after "Introduction"
 found_abstract = False  # Track if we found the "Abstract" section
+processing     = False  # Flag to start processing after "Introduction"
 stop_keywords  = ["References", "Bibliography"]
-start_keywords = ["Introduction"]  # Flexible introduction headings
+start_keywords = ["Introduction"]
 
 paragraph_count = 1
 
@@ -181,6 +169,7 @@ for p in doc.paragraphs:
     # Detect "Abstract" heading
     if re.match(r"^Abstract$", text, re.IGNORECASE):
         found_abstract = True
+        print("✅ Found the Abstract")
         continue
 
     # If we are in the paragraph right after Abstract
@@ -189,12 +178,15 @@ for p in doc.paragraphs:
         found_abstract = False  # Only do 1 paragraph after Abstract
 
     # If "Introduction" is in text, start editing
-    if "Introduction" in text:
+    if re.match(r"^Introduction$", text, re.IGNORECASE):
         processing = True
+        print("✅ Now counting paragraphs after 'Introduction'")
         continue
 
+
     # Stop if we see "References" or "Bibliography"
-    if "References" in text or "Bibliography" in text:
+    if re.match(r"^\d*\.?\s*References$", text, re.IGNORECASE) or text in stop_keywords:
+        print(f"Stopping counting at '{text}'")
         break
 
     # If processing, skip headings but count paragraphs with 2+ sentences
@@ -213,20 +205,19 @@ for p in doc.paragraphs:
         continue
 
     # Paragraph after Abstract
-    if found_abstract and raw_text.count(".") >= 2:
+    if found_abstract and not processing and raw_text.count(".") >= 2:
         new_text = edit_paragraph_sentencewise(raw_text, model=gpt_model)
         p.text = new_text
         processed_count += 1
         print(f"Processed paragraph {processed_count}/{paragraph_count}")
-        found_abstract = False
 
-    if "Introduction" in raw_text:
+    if re.match(r"^Introduction$", raw_text, re.IGNORECASE):
         processing = True
-        print("✅ Starting edits after 'Introduction'")
+        print("✅ Now processing paragraphs after 'Introduction'")
         continue
 
     if re.match(r"^\d*\.?\s*References$", raw_text, re.IGNORECASE) or raw_text in stop_keywords:
-        print(f"Stopping edits at '{raw_text}'")
+        print(f"Stopping processing at '{raw_text}'")
         break
 
     if processing and raw_text.count(".") >= 2 and not is_heading(raw_text):

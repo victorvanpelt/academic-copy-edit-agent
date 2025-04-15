@@ -67,6 +67,7 @@ def edit_paragraph(paragraph_text, model=gpt_model):
         return paragraph_text
 
     system_prompt = (
+<<<<<<< HEAD
         "You are a professional academic editor. Improve grammar, spelling, and style and professional language while preserving original meaning, terminology, and content."
         "Follow these rules strictly:\n"
         "1) Never change terminology or content.\n"
@@ -76,10 +77,25 @@ def edit_paragraph(paragraph_text, model=gpt_model):
         "5) Do NOT merge, split, or reorder paragraphs. Preserve domain terminology, citations, numbers, and equations.\n"
         "6) Use typographic (curly) apostrophes (’ instead of ').\n"
         "7) Return only the corrected text, with no explanations or new paragraph breaks.\n"
+=======
+        "You are a professional academic editor. Improve grammar, spelling, and style while preserving paragraph breaks. "
+        "Follow these rules strictly:\n"
+        "1) Readability & Clarity: refine sentence structure, enhance logical flow, and remove unnecessary complexity (maintain academic rigor).\n"
+        "2) Active Voice: convert passive to active whenever possible, unless truly needed.\n"
+        "3) Punctuation & Grammar: correct errors for fluency.\n"
+        "4) Consistency & Style: keep terms uniform, use consistent American English spelling.\n"
+        "5) Precision & Objectivity: remove vague language, strengthen claims, avoid subjectivity.\n"
+        "6) Avoid Wordiness: cut redundant words while preserving meaning.\n"
+        "7) Logical Flow & Transitions: ensure coherent transitions between sentences.\n"
+        "8) If a sentence has footnotes at the end or parentheses/brackets (references), skip editing that sentence. Leave it intact.\n"
+        "9) Do NOT merge, split, or reorder paragraphs. Preserve domain terminology, citations, numbers, and equations.\n"
+        "10) Use typographic (curly) apostrophes (’ instead of ').\n"
+        "11) Return only the corrected text, with no explanations or new paragraph breaks.\n"
+>>>>>>> parent of 06b61ae (Update correct_paper.py)
     )
 
     try:
-        response = openai.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model=model,
             temperature=0.1,
             messages=[

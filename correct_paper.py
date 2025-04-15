@@ -58,64 +58,107 @@ def split_into_sentences(text):
     parts = re.split(r'([.?!])', text)
     return parts
 
-def edit_paragraph(paragraph_text, model=gpt_model):
+def reassemble_sentences(parts):
     """
-    Sends the entire paragraph to ChatGPT in one API call.
+    Re-join split text pieces into a single string, ensuring correct spacing
+    and avoiding double punctuation.
     """
-    # Skip very short paragraphs or ones with citations
-    if len(paragraph_text.split()) < 3 or re.search(r"\(.*?\)", paragraph_text) or re.search(r"\[.*?\]", paragraph_text):
-        return paragraph_text
+    result = []
+    # parts is something like: [sentence_text, '.', next_sentence_text, '.', ...]
+    for i in range(0, len(parts), 2):
+        sentence = parts[i].strip()
+        punctuation = parts[i+1] if i+1 < len(parts) else ""
+
+        # If the edited sentence already ends with punctuation, remove it to avoid duplication
+        if sentence and sentence[-1] in ".!?":
+            sentence = sentence.rstrip(".!?")
+
+        # Join the sentence and its punctuation
+        if sentence:
+            combined = sentence + punctuation
+            # Trim any accidental double or triple dots (e.g. ".." -> ".")
+            combined = re.sub(r"\.\.+", ".", combined)
+            result.append(combined.strip())
+
+    # Join them with a space, then do one final cleanup
+    joined = " ".join(result)
+    joined = re.sub(r"\s([.?!])", r"\1", joined)  # remove space before punctuation if any
+    return joined.strip()
+
+def edit_sentence_with_chatgpt(sentence, model=gpt_model):
+    """
+    Calls OpenAI with minimal editing instructions to fix grammar/spelling
+    """
+    if re.search(r"\(.*?\)", sentence) or re.search(r"\[.*?\]", sentence):
+        return sentence
+
+    # Also skip if trivially short
+    if len(sentence.split()) < 3:
+        return sentence
 
     system_prompt = (
-<<<<<<< HEAD
-<<<<<<< HEAD
+        # "You are a professional academic editor. Improve grammar, spelling, and style while preserving paragraph breaks. "
+        # "Follow these rules strictly:\n"
+        # "1) Never change terminology or content.\n"
+        # "2) Readability & Clarity: refine sentence structure, enhance logical flow, and remove unnecessary complexity (maintain academic rigor).\n"
+        # "3) Active Voice: convert passive to active whenever possible, unless needed for paragraph flow.\n"
+        # "4) Grammar: correct grammatical errors and follow American English spelling.\n"
+        # "5) Consistency: Use consistent terminology relying on the first terms you encounter.\n"
+        # "6) Avoid Wordiness: cut redundant words while preserving meaning and content.\n"
+        # "7) Logical Transitions: ensure coherent transitions between sentences.\n"
         "You are a professional academic editor. Improve grammar, spelling, and style and professional language while preserving original meaning, terminology, and content."
         "Follow these rules strictly:\n"
         "1) Never change terminology or content.\n"
-        "2) Do not change citations, footnotes, or terminology.\n"
-        "3) Only focus on improving grammar, spelling, and style based on academic writing standards and American English.\n"             
-        "4) If a sentence has footnotes at the end or parentheses/brackets (references), skip editing that entire sentence, including the footnote. Leave it intact.\n"
+        "2) Do not change citations, footnotes, or terminology. \n"
+        '3) Only focus on improving grammar, spelling, and style based on academic writing standards and American English.\n'             
+        "4) If a sentence has footnotes at the end or parentheses/brackets (references), skip editing that enitre sentence, including the footnote. Leave it intact.\n"
         "5) Do NOT merge, split, or reorder paragraphs. Preserve domain terminology, citations, numbers, and equations.\n"
         "6) Use typographic (curly) apostrophes (’ instead of ').\n"
         "7) Return only the corrected text, with no explanations or new paragraph breaks.\n"
-=======
-        "You are a professional academic editor. Improve grammar, spelling, and style while preserving paragraph breaks. "
-        "Follow these rules strictly:\n"
-=======
-        "You are a professional academic editor. Improve grammar, spelling, and style while preserving paragraph breaks. "
-        "Follow these rules strictly:\n"
->>>>>>> parent of 06b61ae (Update correct_paper.py)
-        "1) Readability & Clarity: refine sentence structure, enhance logical flow, and remove unnecessary complexity (maintain academic rigor).\n"
-        "2) Active Voice: convert passive to active whenever possible, unless truly needed.\n"
-        "3) Punctuation & Grammar: correct errors for fluency.\n"
-        "4) Consistency & Style: keep terms uniform, use consistent American English spelling.\n"
-        "5) Precision & Objectivity: remove vague language, strengthen claims, avoid subjectivity.\n"
-        "6) Avoid Wordiness: cut redundant words while preserving meaning.\n"
-        "7) Logical Flow & Transitions: ensure coherent transitions between sentences.\n"
-        "8) If a sentence has footnotes at the end or parentheses/brackets (references), skip editing that sentence. Leave it intact.\n"
-        "9) Do NOT merge, split, or reorder paragraphs. Preserve domain terminology, citations, numbers, and equations.\n"
-        "10) Use typographic (curly) apostrophes (’ instead of ').\n"
-        "11) Return only the corrected text, with no explanations or new paragraph breaks.\n"
-<<<<<<< HEAD
->>>>>>> parent of 06b61ae (Update correct_paper.py)
-=======
->>>>>>> parent of 06b61ae (Update correct_paper.py)
     )
 
     try:
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model=model,
-            temperature=0.1,
+            temperature = 0.1,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": paragraph_text}
+                {"role": "user", "content": sentence}
             ]
         )
-        return response.choices[0].message.content.strip()
+        edited = response.choices[0].message.content.strip()
+
+        # Post-processing step: remove any accidental trailing double punctuation
+        edited = re.sub(r"\.\.+$", ".", edited)  # if it ends with multiple periods
+        edited = edited.strip()
+        return edited
+
     except Exception as e:
-        print(f"⚠️  Error calling OpenAI API on paragraph: {e}")
+        print(f"⚠️  Error calling OpenAI API on sentence: {e}")
+        return sentence
+
+def edit_paragraph_sentencewise(paragraph_text, model=gpt_model):
+    """
+    Splits a paragraph into sentences, runs minimal-edits on each one,
+    then reassembles them back into one paragraph string.
+    """
+    # If fewer than 2 sentences, skip
+    if paragraph_text.count(".") < 1:
         return paragraph_text
 
+    parts = split_into_sentences(paragraph_text)
+    edited_parts = []
+
+    for i in range(0, len(parts), 2):
+        text_chunk = parts[i].strip() if i < len(parts) else ""
+        punctuation = parts[i+1] if i+1 < len(parts) else ""
+        if text_chunk:
+            edited_text = edit_sentence_with_chatgpt(text_chunk, model=model)
+            edited_parts.append(edited_text)
+            edited_parts.append(punctuation)
+
+    reassembled = reassemble_sentences(edited_parts)
+    return reassembled
 
 ###############################################################################
 # 2) Document processing logic
@@ -173,7 +216,7 @@ for p in doc.paragraphs:
 
     # Paragraph after Abstract
     if found_abstract and not processing and raw_text.count(".") >= 2:
-        new_text = edit_paragraph(raw_text, model=gpt_model)
+        new_text = edit_paragraph_sentencewise(raw_text, model=gpt_model)
         p.text = new_text
         processed_count += 1
         print(f"Processed paragraph {processed_count}/{paragraph_count}")
@@ -188,7 +231,7 @@ for p in doc.paragraphs:
         break
 
     if processing and raw_text.count(".") >= 2 and not is_heading(raw_text):
-        new_text = edit_paragraph(raw_text, model=gpt_model)
+        new_text = edit_paragraph_sentencewise(raw_text, model=gpt_model)
         p.text = new_text
         processed_count += 1
         print(f"Processed paragraph {processed_count}/{paragraph_count}")

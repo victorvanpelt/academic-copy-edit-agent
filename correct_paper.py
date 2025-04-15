@@ -68,6 +68,7 @@ def edit_paragraph(paragraph_text, model=gpt_model):
 
     system_prompt = (
 <<<<<<< HEAD
+<<<<<<< HEAD
         "You are a professional academic editor. Improve grammar, spelling, and style and professional language while preserving original meaning, terminology, and content."
         "Follow these rules strictly:\n"
         "1) Never change terminology or content.\n"
@@ -80,6 +81,10 @@ def edit_paragraph(paragraph_text, model=gpt_model):
 =======
         "You are a professional academic editor. Improve grammar, spelling, and style while preserving paragraph breaks. "
         "Follow these rules strictly:\n"
+=======
+        "You are a professional academic editor. Improve grammar, spelling, and style while preserving paragraph breaks. "
+        "Follow these rules strictly:\n"
+>>>>>>> parent of 06b61ae (Update correct_paper.py)
         "1) Readability & Clarity: refine sentence structure, enhance logical flow, and remove unnecessary complexity (maintain academic rigor).\n"
         "2) Active Voice: convert passive to active whenever possible, unless truly needed.\n"
         "3) Punctuation & Grammar: correct errors for fluency.\n"
@@ -91,6 +96,9 @@ def edit_paragraph(paragraph_text, model=gpt_model):
         "9) Do NOT merge, split, or reorder paragraphs. Preserve domain terminology, citations, numbers, and equations.\n"
         "10) Use typographic (curly) apostrophes (’ instead of ').\n"
         "11) Return only the corrected text, with no explanations or new paragraph breaks.\n"
+<<<<<<< HEAD
+>>>>>>> parent of 06b61ae (Update correct_paper.py)
+=======
 >>>>>>> parent of 06b61ae (Update correct_paper.py)
     )
 

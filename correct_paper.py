@@ -97,21 +97,12 @@ def edit_sentence_with_chatgpt(sentence, model=gpt_model):
         return sentence
 
     system_prompt = (
-        # "You are a professional academic editor. Improve grammar, spelling, and style while preserving paragraph breaks. "
-        # "Follow these rules strictly:\n"
-        # "1) Never change terminology or content.\n"
-        # "2) Readability & Clarity: refine sentence structure, enhance logical flow, and remove unnecessary complexity (maintain academic rigor).\n"
-        # "3) Active Voice: convert passive to active whenever possible, unless needed for paragraph flow.\n"
-        # "4) Grammar: correct grammatical errors and follow American English spelling.\n"
-        # "5) Consistency: Use consistent terminology relying on the first terms you encounter.\n"
-        # "6) Avoid Wordiness: cut redundant words while preserving meaning and content.\n"
-        # "7) Logical Transitions: ensure coherent transitions between sentences.\n"
         "You are a professional academic editor. Improve grammar, spelling, and style and professional language while preserving original meaning, terminology, and content."
         "Follow these rules strictly:\n"
         "1) Never change terminology or content.\n"
         "2) Do not change citations, footnotes, or terminology. \n"
         '3) Only focus on improving grammar, spelling, and style based on academic writing standards and American English.\n'             
-        "4) If a sentence has footnotes at the end or parentheses/brackets (references), skip editing that enitre sentence, including the footnote. Leave it intact.\n"
+        "4) If a sentence has footnotes at the end or parentheses/brackets (references), skip editing that entire sentence, including the footnote. Leave it intact.\n"
         "5) Do NOT merge, split, or reorder paragraphs. Preserve domain terminology, citations, numbers, and equations.\n"
         "6) Use typographic (curly) apostrophes (’ instead of ').\n"
         "7) Return only the corrected text, with no explanations or new paragraph breaks.\n"

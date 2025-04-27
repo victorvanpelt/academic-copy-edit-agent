@@ -210,7 +210,7 @@ for p in doc.paragraphs:
         new_text = edit_paragraph_sentencewise(raw_text, model=gpt_model)
         p.text = new_text
         processed_count += 1
-        print(f"Processed paragraph {processed_count}/{paragraph_count}")
+        print(f"Processed paragraph {processed_count}")
 
     if re.match(r"^Introduction$", raw_text, re.IGNORECASE):
         processing = True
@@ -225,7 +225,7 @@ for p in doc.paragraphs:
         new_text = edit_paragraph_sentencewise(raw_text, model=gpt_model)
         p.text = new_text
         processed_count += 1
-        print(f"Processed paragraph {processed_count}/{paragraph_count}")
+        print(f"Processed paragraph {processed_count}")
 
 print("✅ Editing complete. Saving document...")
 

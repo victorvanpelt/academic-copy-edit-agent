@@ -1,7 +1,10 @@
 import openai
 import os
 from docx import Document
-import win32com.client as win32
+import platform
+IS_WINDOWS = platform.system() == "Windows"
+if IS_WINDOWS:
+    import win32com.client as win32
 import re
 
 ###############################################################################
@@ -237,71 +240,83 @@ print(f"✅ Document saved to {edited_doc_path}")
 ###############################################################################
 # 3) Compare documents in Word
 ###############################################################################
-def compare_documents(original, edited, output):
-    """
-    Automates Microsoft Word's 'Compare Documents' function while ignoring citation changes.
-    Ensures Word properly opens both files before attempting comparison.
-    """
-    try:
-        word = win32.Dispatch("Word.Application")
-        word.Visible = False
+if IS_WINDOWS:
+    def compare_documents(original, edited, output):
+        """
+        Uses Microsoft Word COM automation to compare documents (Windows only).
+        """
+        try:
+            word = win32.Dispatch("Word.Application")
+            word.Visible = False
 
-        # Open Original Document
-        try:
-            original_doc = word.Documents.Open(original)
-        except Exception as e:
-            print(f"⚠️ Error opening original document: {e}")
-            word.Quit()
-            return
-        
-        # Open Edited Document
-        try:
-            edited_doc = word.Documents.Open(edited)
-        except Exception as e:
-            print(f"⚠️ Error opening edited document: {e}")
-            original_doc.Close(False)
-            word.Quit()
-            return
+            try:
+                original_doc = word.Documents.Open(original)
+            except Exception as e:
+                print(f"⚠️ Error opening original document: {e}")
+                word.Quit()
+                return
 
-        # Perform document comparison
-        try:
-            compared_doc = word.CompareDocuments(
-                OriginalDocument=original_doc,
-                RevisedDocument=edited_doc,
-                CompareFormatting=False,
-                IgnoreAllComparisonWarnings=True
-            )
-        except Exception as e:
-            print(f"⚠️ Word comparison failed: {e}")
+            try:
+                edited_doc = word.Documents.Open(edited)
+            except Exception as e:
+                print(f"⚠️ Error opening edited document: {e}")
+                original_doc.Close(False)
+                word.Quit()
+                return
+
+            try:
+                compared_doc = word.CompareDocuments(
+                    OriginalDocument=original_doc,
+                    RevisedDocument=edited_doc,
+                    CompareFormatting=False,
+                    IgnoreAllComparisonWarnings=True
+                )
+            except Exception as e:
+                print(f"⚠️ Word comparison failed: {e}")
+                original_doc.Close(False)
+                edited_doc.Close(False)
+                word.Quit()
+                return
+
+            for change in compared_doc.Revisions:
+                txt = change.Range.Text
+                if re.match(r"\(.*\)", txt):
+                    change.Reject()
+                elif re.match(r"\[\d+\]", txt):
+                    change.Reject()
+
+            for footnote in compared_doc.Footnotes:
+                for change in footnote.Range.Revisions:
+                    change.Reject()
+
+            compared_doc.SaveAs(output, FileFormat=16)
+            compared_doc.Close(False)
             original_doc.Close(False)
             edited_doc.Close(False)
             word.Quit()
-            return
+            print(f"✅ Comparison completed. Document saved to: {output}")
 
-        # Reject citation-related changes
-        for change in compared_doc.Revisions:
-            txt = change.Range.Text
-            if re.match(r"\(.*\)", txt):
-                change.Reject()
-            elif re.match(r"\[\d+\]", txt):
-                change.Reject()
+        except Exception as e:
+            print(f"❌ Critical error comparing documents: {e}")
+            word.Quit()
 
-        # Reject footnote-related changes
-        for footnote in compared_doc.Footnotes:
-            for change in footnote.Range.Revisions:
-                change.Reject()  # Reject any modifications in footnotes
+else:
+    import subprocess
 
-        compared_doc.SaveAs(output, FileFormat=16)
-
-        compared_doc.Close(False)
-        original_doc.Close(False)
-        edited_doc.Close(False)
-
-        word.Quit()
-        print(f"✅ Comparison completed. Document saved to: {output}")
-
-    except Exception as e:
-        print(f"❌ Critical error comparing documents: {e}")
-        word.Quit()
+    def compare_documents(original, edited, output):
+        """
+        On non-Windows platforms, opens the original document in LibreOffice
+        and instructs the user to compare manually.
+        """
+        print("⚠️ Automatic tracked-change comparison is not available on this OS.")
+        print("📂 Opening original document in LibreOffice Writer...")
+        print("📝 In LibreOffice, go to: Edit > Track Changes > Compare Document...")
+        print("🔍 Then select the edited file to complete the comparison.")
+        
+        try:
+            subprocess.Popen(["libreoffice", "--writer", original])
+        except FileNotFoundError:
+            print("❌ LibreOffice is not installed or not found in PATH.")
+            print("Please open the file manually and run the comparison inside LibreOffice.")
 
 compare_documents(original_doc_path, edited_doc_path, output_doc_path)

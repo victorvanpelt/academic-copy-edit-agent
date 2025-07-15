@@ -1,7 +1,10 @@
 import openai
 import os
 from docx import Document
-import win32com.client as win32
+import platform
+IS_WINDOWS = platform.system() == "Windows"
+if IS_WINDOWS:
+    import win32com.client as win32
 import re
 
 ###############################################################################
@@ -97,24 +100,17 @@ def edit_sentence_with_chatgpt(sentence, model=gpt_model):
         return sentence
 
     system_prompt = (
-        # "You are a professional academic editor. Improve grammar, spelling, and style while preserving paragraph breaks. "
-        # "Follow these rules strictly:\n"
-        # "1) Never change terminology or content.\n"
-        # "2) Readability & Clarity: refine sentence structure, enhance logical flow, and remove unnecessary complexity (maintain academic rigor).\n"
-        # "3) Active Voice: convert passive to active whenever possible, unless needed for paragraph flow.\n"
-        # "4) Grammar: correct grammatical errors and follow American English spelling.\n"
-        # "5) Consistency: Use consistent terminology relying on the first terms you encounter.\n"
-        # "6) Avoid Wordiness: cut redundant words while preserving meaning and content.\n"
-        # "7) Logical Transitions: ensure coherent transitions between sentences.\n"
-        "You are a professional academic editor. Improve grammar, spelling, and style and professional language while preserving original meaning, terminology, and content."
+        "You are a professional academic copy editor. Improve grammar, spelling, and style and professional language while preserving original meaning, terminology, and content."
+        "The primary purpose is to ensure the text is clear and effectively communicates what it intends to communicate."
         "Follow these rules strictly:\n"
-        "1) Never change terminology or content.\n"
-        "2) Do not change citations, footnotes, or terminology. \n"
+        "1) Never change terminology or the primary content of the text.\n"
+        "2) Do not change citations and footnotes. \n"
         '3) Only focus on improving grammar, spelling, and style based on academic writing standards and American English.\n'             
-        "4) If a sentence has footnotes at the end or parentheses/brackets (references), skip editing that enitre sentence, including the footnote. Leave it intact.\n"
-        "5) Do NOT merge, split, or reorder paragraphs. Preserve domain terminology, citations, numbers, and equations.\n"
-        "6) Use typographic (curly) apostrophes (’ instead of ').\n"
-        "7) Return only the corrected text, with no explanations or new paragraph breaks.\n"
+        "4) If a sentence has footnotes at the end or parentheses/brackets (citations and references), skip editing that entire sentence, including the footnote. Leave it intact.\n"
+        "5) If a text is too short for you to copy edit, just skip it.\n"
+        "6) Do NOT merge, split, or reorder paragraphs. Preserve the original paragraph.\n"
+        "7) Use typographic (curly) apostrophes (’ instead of ').\n"
+        "8) Return only the corrected text, with no explanations, instructions, questions, or new paragraph breaks.\n"
     )
 
     try:
@@ -244,71 +240,83 @@ print(f"✅ Document saved to {edited_doc_path}")
 ###############################################################################
 # 3) Compare documents in Word
 ###############################################################################
-def compare_documents(original, edited, output):
-    """
-    Automates Microsoft Word's 'Compare Documents' function while ignoring citation changes.
-    Ensures Word properly opens both files before attempting comparison.
-    """
-    try:
-        word = win32.Dispatch("Word.Application")
-        word.Visible = False
+if IS_WINDOWS:
+    def compare_documents(original, edited, output):
+        """
+        Uses Microsoft Word COM automation to compare documents (Windows only).
+        """
+        try:
+            word = win32.Dispatch("Word.Application")
+            word.Visible = False
 
-        # Open Original Document
-        try:
-            original_doc = word.Documents.Open(original)
-        except Exception as e:
-            print(f"⚠️ Error opening original document: {e}")
-            word.Quit()
-            return
-        
-        # Open Edited Document
-        try:
-            edited_doc = word.Documents.Open(edited)
-        except Exception as e:
-            print(f"⚠️ Error opening edited document: {e}")
-            original_doc.Close(False)
-            word.Quit()
-            return
+            try:
+                original_doc = word.Documents.Open(original)
+            except Exception as e:
+                print(f"⚠️ Error opening original document: {e}")
+                word.Quit()
+                return
 
-        # Perform document comparison
-        try:
-            compared_doc = word.CompareDocuments(
-                OriginalDocument=original_doc,
-                RevisedDocument=edited_doc,
-                CompareFormatting=False,
-                IgnoreAllComparisonWarnings=True
-            )
-        except Exception as e:
-            print(f"⚠️ Word comparison failed: {e}")
+            try:
+                edited_doc = word.Documents.Open(edited)
+            except Exception as e:
+                print(f"⚠️ Error opening edited document: {e}")
+                original_doc.Close(False)
+                word.Quit()
+                return
+
+            try:
+                compared_doc = word.CompareDocuments(
+                    OriginalDocument=original_doc,
+                    RevisedDocument=edited_doc,
+                    CompareFormatting=False,
+                    IgnoreAllComparisonWarnings=True
+                )
+            except Exception as e:
+                print(f"⚠️ Word comparison failed: {e}")
+                original_doc.Close(False)
+                edited_doc.Close(False)
+                word.Quit()
+                return
+
+            for change in compared_doc.Revisions:
+                txt = change.Range.Text
+                if re.match(r"\(.*\)", txt):
+                    change.Reject()
+                elif re.match(r"\[\d+\]", txt):
+                    change.Reject()
+
+            for footnote in compared_doc.Footnotes:
+                for change in footnote.Range.Revisions:
+                    change.Reject()
+
+            compared_doc.SaveAs(output, FileFormat=16)
+            compared_doc.Close(False)
             original_doc.Close(False)
             edited_doc.Close(False)
             word.Quit()
-            return
+            print(f"✅ Comparison completed. Document saved to: {output}")
 
-        # Reject citation-related changes
-        for change in compared_doc.Revisions:
-            txt = change.Range.Text
-            if re.match(r"\(.*\)", txt):
-                change.Reject()
-            elif re.match(r"\[\d+\]", txt):
-                change.Reject()
+        except Exception as e:
+            print(f"❌ Critical error comparing documents: {e}")
+            word.Quit()
 
-        # Reject footnote-related changes
-        for footnote in compared_doc.Footnotes:
-            for change in footnote.Range.Revisions:
-                change.Reject()  # Reject any modifications in footnotes
+else:
+    import subprocess
 
-        compared_doc.SaveAs(output, FileFormat=16)
-
-        compared_doc.Close(False)
-        original_doc.Close(False)
-        edited_doc.Close(False)
-
-        word.Quit()
-        print(f"✅ Comparison completed. Document saved to: {output}")
-
-    except Exception as e:
-        print(f"❌ Critical error comparing documents: {e}")
-        word.Quit()
+    def compare_documents(original, edited, output):
+        """
+        On non-Windows platforms, opens the original document in LibreOffice
+        and instructs the user to compare manually.
+        """
+        print("⚠️ Automatic tracked-change comparison is not available on this OS.")
+        print("📂 Opening original document in LibreOffice Writer...")
+        print("📝 In LibreOffice, go to: Edit > Track Changes > Compare Document...")
+        print("🔍 Then select the edited file to complete the comparison.")
+        
+        try:
+            subprocess.Popen(["libreoffice", "--writer", original])
+        except FileNotFoundError:
+            print("❌ LibreOffice is not installed or not found in PATH.")
+            print("Please open the file manually and run the comparison inside LibreOffice.")
 
 compare_documents(original_doc_path, edited_doc_path, output_doc_path)

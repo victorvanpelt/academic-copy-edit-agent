@@ -1,6 +1,6 @@
 ## Academic Copy Editor Agent
 
-This is a script that copy edits academic working papers and saves the updated document, including a separate track-changes copy in docx format. It runs through every paragraph, correcting grammar, spelling, and style (nothing more). It also tries to leave the paragraph structure, substance, formatting, and terminology intact.
+This is a script that copy edits academic papers and saves the updated document, including a separate track-changes copy in docx format. It runs through every paragraph, correcting exclusively grammar, spelling, and style. It also tries to leave the paragraph structure, substance, formatting, and terminology intact.
 
 ## Requirements
 - You will need to be able to run .py files and have an python environment, while importing the following packages: openai, os, docx, win32com.client, and re.
@@ -14,7 +14,7 @@ This is a script that copy edits academic working papers and saves the updated d
 
 2.  OPTIONAL: Adjust instructions in lines 98 of "correct_paper.py"
 
-3.  OPTIONAL: Adjust the model you'd like to use on line 13 of "correct_paper.py"
+3.  OPTIONAL: Adjust the model you'd like to use on line 13 of "correct_paper.py" GPT models work better with the specific instructions.
 
 4.  Save your paper as a "paper.docx" in the "0_input" folder. Ensure it includes the headings: "Abstract," "Introduction," and "References." The script will use these headings as reference points.
 
@@ -24,4 +24,4 @@ This is a script that copy edits academic working papers and saves the updated d
 
 ## Known issues
 - The script cannot handle and thus automatically deletes footnotes. Just reject these changes in the track changes document.
-- The script does not interact well with word reference managers. This may create minor issues that you will have to correct yourself.
+- The script does not interact well with word reference managers. This may create unnecessary trackchanges in the trackchanges_paper.docx when comparing.

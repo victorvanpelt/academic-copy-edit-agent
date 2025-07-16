@@ -97,17 +97,17 @@ def edit_sentence_with_chatgpt(sentence, model=gpt_model):
         return sentence
 
     system_prompt = (
-        "You are a professional academic copy editor. Improve grammar, spelling, and style and professional language while preserving original meaning, terminology, and content."
-        "The primary purpose is to ensure the text is clear and effectively communicates what it intends to communicate."
+        "You are a professional academic copy editor. Improve grammar, spelling, conciseness, style and professional language while preserving original meaning, terminology, and content."
+        "The primary purpose is to ensure the text is clear and concise, while effectively communicating what it intends to communicate."
         "Follow these rules strictly:\n"
         "1) Never change terminology or the primary content of the text.\n"
-        "2) Do not change citations and footnotes. \n"
-        '3) Only focus on improving grammar, spelling, and style based on academic writing standards and American English.\n'             
-        "4) If a sentence has footnotes at the end or parentheses/brackets (citations and references), skip editing that entire sentence, including the footnote. Leave it intact.\n"
-        "5) If a text is too short for you to copy edit, just skip it.\n"
+        "2) Do not change citations and footnotes. Skip them and leave them intact.\n"
+        '3) Only focus on improving grammar, spelling, conciseness, and style based on academic writing standards and American English.\n'             
+        "4) If a sentence has footnotes at the end or citations and references (e.g., parentheses/brackets), skip editing that entire sentence, including the footnote. Leave it intact.\n"
+        "5) If a text is too short for you to copy edit, just skip it and do not give a warning message.\n"
         "6) Do NOT merge, split, or reorder paragraphs. Preserve the original paragraph.\n"
         "7) Use typographic (curly) apostrophes (’ instead of ').\n"
-        "8) Return only the corrected text, with no explanations, instructions, questions, or new paragraph breaks.\n"
+        "8) Return only the corrected text, with no explanations, instructions, questions, warnings, comments or new paragraph breaks.\n"
     )
 
     try:
@@ -181,7 +181,7 @@ for p in doc.paragraphs:
         found_abstract = False  # Only do 1 paragraph after Abstract
 
     # If "Introduction" is in text, start editing
-    if re.match(r"^Introduction$", text, re.IGNORECASE):
+    if re.match(r"^(?:\d+(?:\.\d+)*\s*)?Introduction$", text, re.IGNORECASE):
         processing = True
         print("✅ Now counting paragraphs after 'Introduction'")
         continue
@@ -214,7 +214,7 @@ for p in doc.paragraphs:
         processed_count += 1
         print(f"Processed paragraph {processed_count}")
 
-    if re.match(r"^Introduction$", raw_text, re.IGNORECASE):
+    if re.match(r"^(?:\d+(?:\.\d+)*\s*)?Introduction$", raw_text, re.IGNORECASE):
         processing = True
         print("✅ Now processing paragraphs after 'Introduction'")
         continue

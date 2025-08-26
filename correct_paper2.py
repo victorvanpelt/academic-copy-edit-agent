@@ -1,4 +1,4 @@
-import openai
+from openai import OpenAI
 import os
 from docx import Document
 import win32com.client as win32
@@ -28,8 +28,8 @@ if not os.path.exists(original_doc_path):
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("Set OPENAI_API_KEY env var")
-openai.api_key = api_key
-
+#openai.api_key = api_key
+client = OpenAI(api_key=api_key)
 ###############################################################################
 # Helper functions
 ###############################################################################
@@ -73,9 +73,8 @@ def edit_sentence_with_chatgpt(sentence: str, model: str = gpt_model) -> str:
     )
 
     try:
-        resp = openai.chat.completions.create(
+        resp = client.chat.completions.create(
             model=model,
-            temperature=0,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": sentence},
